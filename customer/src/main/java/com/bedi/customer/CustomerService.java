@@ -1,7 +1,8 @@
 package com.bedi.customer;
 
+import com.bedi.clients.fraud.FraudCheckResponse;
+import com.bedi.clients.fraud.FraudClient;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -13,6 +14,8 @@ import org.springframework.web.client.RestTemplate;
 
         private final CustomerRepositery customerRepositery;
 
+        private final FraudClient fraudClient;
+
         public void registerCustomer(CustomerRegistrationRequest request) {
             Customer customer = Customer.builder()
                     .firstName(request.firstName())
@@ -22,16 +25,20 @@ import org.springframework.web.client.RestTemplate;
             //save and flush ID
             customerRepositery.saveAndFlush(customer);
 
-            //microservices call
-            FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
-                    "http:localhost:8081/api/vi/fraudCheck/{customerId}",
-                    FraudCheckResponse.class,
-                    customer.getId()
-            );
+//            //microservices call
+//            FraudCheckResponse fraudCheckResponse = restTemplate.getForObject(
+//                    "http://FRAUD:8081/api/vi/fraudCheck/{customerId}",
+//                    FraudCheckResponse.class,
+//                    customer.getId()
+//            );
 
-            if (fraudCheckResponse.isFraudCustomer()){
+            FraudCheckResponse fraudCheckResponse= fraudClient.isFraudster(customer.getId());
+
+            if (fraudCheckResponse.isFraudster()){
                 throw new IllegalStateException("fraudster");
             }
+
+
 
         }
     }
